@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Run Python Files with Pyodide</title>
+  <title>Python Runner via Pyodide</title>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -13,10 +13,7 @@
   </style>
 </head>
 <body>
-  <h2>Python Runner (Week 2 - Super100)</h2>
-
-  <textarea id="input" placeholder="User input (not required for most functions)"></textarea>
-  <br>
+  <h2>Python Output Viewer</h2>
 
   <button onclick="runScript('beginner1')">Run beginner1.py</button>
   <button onclick="runScript('beginner2')">Run beginner2.py</button>
@@ -26,7 +23,7 @@
   <button onclick="runScript('task3')">Run task3.py</button>
 
   <h3>Output:</h3>
-  <pre id="output">Initializing Pyodide...</pre>
+  <pre id="output">Loading Pyodide...</pre>
 
   <script>
     let pyodideReady = loadPyodide();
@@ -128,8 +125,19 @@ print(register("john", "anotherpass"))
     async function runScript(name) {
       const pyodide = await pyodideReady;
       try {
-        const result = await pyodide.runPythonAsync(scripts[name]);
-        document.getElementById("output").textContent = result ?? "✅ Script ran successfully.";
+        // Redirect stdout
+        await pyodide.runPythonAsync(`
+import sys
+from io import StringIO
+sys.stdout = mystdout = StringIO()
+        `);
+
+        // Run script
+        await pyodide.runPythonAsync(scripts[name]);
+
+        // Capture output
+        const result = await pyodide.runPythonAsync("mystdout.getvalue()");
+        document.getElementById("output").textContent = result;
       } catch (err) {
         document.getElementById("output").textContent = "❌ Error:\n" + err;
       }
